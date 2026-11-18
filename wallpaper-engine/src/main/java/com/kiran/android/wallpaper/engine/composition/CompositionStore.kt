@@ -20,6 +20,10 @@ import kotlin.math.roundToInt
  * Saved user compositions plus the photos they use, kept under [dir]:
  * `compositions.json` and `images/`. Thread-safe. Listeners are called on the thread that
  * made the change.
+ *
+ * **Drafts** (`drafts.json`) are compositions nobody has chosen to keep yet, e.g. ones an agent
+ * made for the user to preview. They aren't listed by [all]. [promoteDraft] turns one into a
+ * saved composition, and [pruneDrafts] drops old ones.
  */
 class CompositionStore(private val dir: File) {
 
@@ -30,7 +34,12 @@ class CompositionStore(private val dir: File) {
     private val file = File(dir, "compositions.json")
     val imagesDir = File(dir, "images")
     private val listeners = CopyOnWriteArraySet<Listener>()
+    private val draftsFile = File(dir, "drafts.json")
     private var cache: List<Composition> = load()
+    private var drafts: List<Draft> = loadDrafts()
+
+    /** A composition awaiting the user's decision. [createdAt] is epoch millis. */
+    data class Draft(val composition: Composition, val createdAt: Long)
 
     @Synchronized
     fun all(): List<Composition> = cache
@@ -58,9 +67,64 @@ class CompositionStore(private val dir: File) {
         notifyListeners()
     }
 
-    /** Deletes stored images that no saved composition uses, apart from [keep]. */
+    // ---- Drafts ----
+
+    @Synchronized
+    fun drafts(): List<Draft> = drafts
+
+    @Synchronized
+    fun getDraft(id: String): Composition? = drafts.firstOrNull { it.composition.id == id }?.composition
+
+    /** Inserts or replaces a draft (matched by id). The original creation time is kept. */
+    fun saveDraft(c: Composition, now: Long = System.currentTimeMillis()) {
+        require(c.layers.size <= Composition.MAX_LAYERS) { "At most ${Composition.MAX_LAYERS} layers" }
+        synchronized(this) {
+            val created = drafts.firstOrNull { it.composition.id == c.id }?.createdAt ?: now
+            drafts = drafts.filterNot { it.composition.id == c.id } + Draft(c, created)
+            persistDrafts()
+        }
+    }
+
+    fun deleteDraft(id: String) {
+        synchronized(this) {
+            drafts = drafts.filterNot { it.composition.id == id }
+            persistDrafts()
+        }
+        pruneImages()
+    }
+
+    /** Moves a draft into the saved compositions, optionally retitled. Returns it, or null if gone. */
+    fun promoteDraft(id: String, title: String? = null): Composition? {
+        val promoted = synchronized(this) {
+            val d = drafts.firstOrNull { it.composition.id == id } ?: return null
+            drafts = drafts - d
+            persistDrafts()
+            d.composition.let { if (title != null) it.copy(title = title) else it }
+        }
+        save(promoted)
+        return promoted
+    }
+
+    /** Drops drafts created before [now] − [maxAgeMs]. Returns how many were removed. */
+    fun pruneDrafts(maxAgeMs: Long, now: Long = System.currentTimeMillis()): Int {
+        val removed = synchronized(this) {
+            val keep = drafts.filter { now - it.createdAt <= maxAgeMs }
+            val n = drafts.size - keep.size
+            if (n > 0) {
+                drafts = keep
+                persistDrafts()
+            }
+            n
+        }
+        if (removed > 0) pruneImages()
+        return removed
+    }
+
+    /** Deletes stored images that no saved composition or draft uses, apart from [keep]. */
     fun pruneImages(keep: Set<String> = emptySet()) {
-        val used = synchronized(this) { cache.flatMapTo(HashSet()) { it.imagePaths() } } + keep
+        val used = synchronized(this) {
+            cache.flatMapTo(HashSet()) { it.imagePaths() } + drafts.flatMap { it.composition.imagePaths() }
+        } + keep
         imagesDir.listFiles()?.forEach { f ->
             if (f.absolutePath !in used && !f.delete()) Log.w(TAG, "Could not delete $f")
         }
@@ -100,13 +164,37 @@ class CompositionStore(private val dir: File) {
         emptyList()
     }
 
-    private fun persist() {
+    private fun loadDrafts(): List<Draft> = try {
+        if (!draftsFile.exists()) emptyList() else {
+            val arr = org.json.JSONArray(draftsFile.readText())
+            (0 until arr.length()).map {
+                val o = arr.getJSONObject(it)
+                Draft(CompositionJson.fromJson(o.getJSONObject("composition")), o.optLong("createdAt"))
+            }
+        }
+    } catch (e: Exception) {
+        Log.e(TAG, "Could not read $draftsFile", e)
+        emptyList()
+    }
+
+    private fun persist() = writeAtomically(file, CompositionJson.listToString(cache))
+
+    private fun persistDrafts() = writeAtomically(
+        draftsFile,
+        org.json.JSONArray().apply {
+            drafts.forEach {
+                put(org.json.JSONObject().put("createdAt", it.createdAt).put("composition", CompositionJson.toJson(it.composition)))
+            }
+        }.toString(),
+    )
+
+    private fun writeAtomically(target: File, text: String) {
         dir.mkdirs()
-        val tmp = File(dir, "compositions.json.tmp")
-        tmp.writeText(CompositionJson.listToString(cache))
-        if (!tmp.renameTo(file)) {
-            file.delete()
-            check(tmp.renameTo(file)) { "Could not write $file" }
+        val tmp = File(dir, target.name + ".tmp")
+        tmp.writeText(text)
+        if (!tmp.renameTo(target)) {
+            target.delete()
+            check(tmp.renameTo(target)) { "Could not write $target" }
         }
     }
 

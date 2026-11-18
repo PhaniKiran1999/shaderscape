@@ -37,6 +37,7 @@ android {
 
 dependencies {
     implementation(project(":wallpaper-engine"))
+    implementation(libs.agent.skill.sdk)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)

@@ -141,3 +141,13 @@ Scenes get `uLayered = 1` when they aren't the bottom layer. Aurora and Lens Fla
 
 ### Limits
 `Composition.MAX_LAYERS = 5`, enforced by the store and the editor. Every visible layer is a full-screen pass, so fill-rate is the cost to watch. Debug builds log the average CPU draw time every 5 s (`RenderThread … avg draw`).
+
+## Agent skill provider
+
+The app is also a **skill provider** for on-device agents, through the [Agent Skill SDK](../../agent-skill-sdk/README.md):
+- **`skill/WallpaperSkillService`** exposes three tools: `create_shader_wallpaper`, `revise_shader_wallpaper` and `list_my_wallpapers`. It's guarded by the SDK's signature permission.
+- **`ShaderTidier`** fixes formatting mistakes before checking. **`engine/validation/ShaderValidator`** then checks agent-written GLSL on an offscreen GPU context, using the same header, footer and renderer as the live wallpaper. It returns fixable errors with the author's line numbers.
+- **Valid shaders become drafts** (`CompositionStore` `drafts.json`): a single `LayerSource.Shader` layer, i.e. inline GLSL with no registry entry.
+- **The agent receives a preview artifact**, a PendingIntent to `skill/PreviewActivity`. There the user tries the wallpaper and chooses Save, Set as wallpaper, Edit layers (composer) or Discard. The agent can never save or apply anything itself.
+
+Full design: `agent-skill-sdk/design-docs/`.

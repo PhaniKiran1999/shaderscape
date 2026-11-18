@@ -24,6 +24,32 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <!-- Agent preview of a draft. Not exported: opened only via the skill's PendingIntent. -->
+        <activity
+            android:name=".skill.PreviewActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Wallpapers" />
+
+        <!--
+            Agent Skill SDK provider: lets the on-device agent create wallpaper drafts.
+            Guarded by the SDK's signature permission, so only apps signed with our key can bind.
+        -->
+        <service
+            android:name=".skill.WallpaperSkillService"
+            android:exported="true"
+            android:permission="com.kiran.agentskills.permission.SKILL">
+            <intent-filter>
+                <action android:name="com.kiran.agentskills.action.SKILL_PROVIDER" />
+            </intent-filter>
+            <meta-data android:name="com.kiran.agentskills.skill.ID" android:value="wallpapers" />
+            <meta-data android:name="com.kiran.agentskills.skill.TITLE" android:value="Live wallpapers" />
+            <meta-data
+                android:name="com.kiran.agentskills.skill.SUMMARY"
+                android:value="Creates interactive animated live wallpapers from GLSL shaders." />
+            <meta-data
+                android:name="com.kiran.agentskills.skill.KEYWORDS"
+                android:value="wallpaper,background,shader,live,animated,home screen,lock screen,glsl" />
+        </service>
     </application>
 
 </manifest>

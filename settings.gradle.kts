@@ -23,6 +23,10 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "Wallpapers"
+
+// Agent Skill SDK, built from source next to this repo. Gradle substitutes
+// "com.kiran.agentskills:skill-sdk" with that build's project.
+includeBuild("../agent-skill-sdk")
 include(":app")
 include(":wallpaper-engine")
  

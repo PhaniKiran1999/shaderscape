@@ -295,6 +295,7 @@ private fun LayerRow(
     val name = when (val s = layer.source) {
         is LayerSource.Image -> "Photo"
         is LayerSource.Scene -> WallpaperRegistry[s.sceneId]?.title ?: s.sceneId
+        is LayerSource.Shader -> "Custom shader"
     }
     Column(Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {

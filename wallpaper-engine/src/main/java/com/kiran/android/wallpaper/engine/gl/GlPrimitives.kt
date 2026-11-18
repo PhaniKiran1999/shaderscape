@@ -14,6 +14,10 @@ void main() {
 }
 """
 
+/** A shader failed to compile ([stage] = "vertex"/"fragment") or link ([stage] = "link"). */
+class ShaderCompileException(val stage: String, val log: String) :
+    IllegalStateException("Shader $stage failed: $log")
+
 /** A compiled and linked GL program with cached uniform locations. */
 internal class ShaderProgram(vertexSource: String, fragmentSource: String) {
 
@@ -39,7 +43,7 @@ internal class ShaderProgram(vertexSource: String, fragmentSource: String) {
         if (status[0] == 0) {
             val log = GLES20.glGetProgramInfoLog(id)
             GLES20.glDeleteProgram(id)
-            throw IllegalStateException("Program link failed: $log")
+            throw ShaderCompileException("link", log)
         }
     }
 
@@ -61,7 +65,7 @@ internal class ShaderProgram(vertexSource: String, fragmentSource: String) {
             val log = GLES20.glGetShaderInfoLog(shader)
             GLES20.glDeleteShader(shader)
             val kind = if (type == GLES20.GL_VERTEX_SHADER) "vertex" else "fragment"
-            throw IllegalStateException("Compiling the $kind shader failed: $log")
+            throw ShaderCompileException(kind, log)
         }
         return shader
     }

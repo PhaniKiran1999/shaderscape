@@ -11,6 +11,7 @@ import android.os.SystemClock
 import android.util.Log
 import android.view.Choreographer
 import android.view.Surface
+import com.kiran.android.wallpaper.engine.InlineShaderScene
 import com.kiran.android.wallpaper.engine.WallpaperRegistry
 import com.kiran.android.wallpaper.engine.composition.Composition
 import com.kiran.android.wallpaper.engine.composition.Layer
@@ -232,6 +233,7 @@ internal class RenderThread(
                 LayerRenderer.forScene(scene)
             }
             is LayerSource.Image -> ImageLayerRenderer(src.path, src.parallax).also { it.onOffset(xOffset) }
+            is LayerSource.Shader -> LayerRenderer.forScene(InlineShaderScene(src.code).also { it.dispatchOffset(xOffset) })
         }
         Slot(renderer)
     } catch (e: RuntimeException) {

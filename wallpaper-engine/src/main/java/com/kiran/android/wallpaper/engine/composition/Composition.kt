@@ -12,6 +12,12 @@ sealed interface LayerSource {
 
     /** An image file in app storage (see `CompositionStore.importImage`). */
     data class Image(val path: String, val parallax: Boolean = true) : LayerSource
+
+    /**
+     * Inline GLSL: a fragment-shader body following the `ShaderScene` contract. Used for
+     * shaders written at runtime (e.g. by an agent) that have no registered scene.
+     */
+    data class Shader(val code: String) : LayerSource
 }
 
 data class Layer(
@@ -34,6 +40,9 @@ data class Composition(
     val visibleLayers: List<Layer> get() = layers.filter { it.visible && it.opacity > 0f }
 
     val isFull: Boolean get() = layers.size >= MAX_LAYERS
+
+    /** True when any visible layer is an animated scene or shader (needs continuous frames). */
+    val isAnimated: Boolean get() = visibleLayers.any { it.source !is LayerSource.Image }
 
     fun imagePaths(): Set<String> =
         layers.mapNotNullTo(HashSet()) { (it.source as? LayerSource.Image)?.path }

@@ -19,11 +19,17 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val editId = intent.getStringExtra(EXTRA_EDIT_COMPOSITION)
         setContent {
             WallpapersTheme {
-                WallpapersNavigation()
+                WallpapersNavigation(initialRoute = editId?.let { "composer:$it" } ?: "gallery")
             }
         }
+    }
+
+    companion object {
+        /** Opens the layer editor for this saved composition (used by the agent preview). */
+        const val EXTRA_EDIT_COMPOSITION = "edit_composition"
     }
 }
 
@@ -32,8 +38,8 @@ class MainActivity : ComponentActivity() {
  * process death: "gallery", "detail:<sceneId>", "composer:" (new) or "composer:<compositionId>".
  */
 @Composable
-private fun WallpapersNavigation() {
-    var route by rememberSaveable { mutableStateOf("gallery") }
+private fun WallpapersNavigation(initialRoute: String) {
+    var route by rememberSaveable { mutableStateOf(initialRoute) }
     val goHome = { route = "gallery" }
     when {
         route.startsWith("detail:") -> {

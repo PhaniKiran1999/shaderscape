@@ -122,6 +122,23 @@ void main() {
     }
 }
 
+/**
+ * A [ShaderScene] whose source is given at runtime, e.g. written by an agent. Validate untrusted
+ * sources with `ShaderValidator` first. It reads the layers below automatically when the source
+ * samples `uBelow`.
+ */
+class InlineShaderScene(
+    override val fragmentShader: String,
+    fps: Int = 60,
+) : ShaderScene() {
+    override val targetFps: Int = fps
+    override val readsBelow: Boolean = USES_BELOW.containsMatchIn(fragmentShader)
+
+    private companion object {
+        val USES_BELOW = Regex("\\buBelow\\b")
+    }
+}
+
 /** A [ShaderScene] that loads its fragment shader from `assets/`. */
 open class AssetShaderScene(
     context: Context,

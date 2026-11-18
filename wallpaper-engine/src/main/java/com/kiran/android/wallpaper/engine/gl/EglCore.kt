@@ -7,8 +7,13 @@ import android.opengl.EGLDisplay
 import android.opengl.EGLSurface
 import android.view.Surface
 
-/** One OpenGL ES 2.0 context, owned by a single render thread. */
-internal class EglCore {
+/**
+ * One OpenGL ES 2.0 context, owned by a single render thread.
+ *
+ * @param offscreen choose a config that supports pbuffer surfaces (for validation without a
+ *   window) instead of window surfaces.
+ */
+internal class EglCore(offscreen: Boolean = false) {
 
     private val display: EGLDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY)
     private val config: EGLConfig
@@ -26,7 +31,7 @@ internal class EglCore {
             EGL14.EGL_ALPHA_SIZE, 8,
             EGL14.EGL_DEPTH_SIZE, 0,
             EGL14.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT,
-            EGL14.EGL_SURFACE_TYPE, EGL14.EGL_WINDOW_BIT,
+            EGL14.EGL_SURFACE_TYPE, if (offscreen) EGL14.EGL_PBUFFER_BIT else EGL14.EGL_WINDOW_BIT,
             EGL14.EGL_NONE,
         )
         val configs = arrayOfNulls<EGLConfig>(1)
@@ -47,6 +52,16 @@ internal class EglCore {
         val s = EGL14.eglCreateWindowSurface(display, config, surface, intArrayOf(EGL14.EGL_NONE), 0)
         check(s != null && s != EGL14.EGL_NO_SURFACE) {
             "eglCreateWindowSurface failed: 0x${Integer.toHexString(EGL14.eglGetError())}"
+        }
+        return s
+    }
+
+    fun createPbufferSurface(width: Int, height: Int): EGLSurface {
+        val s = EGL14.eglCreatePbufferSurface(
+            display, config, intArrayOf(EGL14.EGL_WIDTH, width, EGL14.EGL_HEIGHT, height, EGL14.EGL_NONE), 0,
+        )
+        check(s != null && s != EGL14.EGL_NO_SURFACE) {
+            "eglCreatePbufferSurface failed: 0x${Integer.toHexString(EGL14.eglGetError())}"
         }
         return s
     }

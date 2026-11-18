@@ -41,6 +41,7 @@ object CompositionJson {
         when (val s = l.source) {
             is LayerSource.Scene -> o.put("type", "scene").put("sceneId", s.sceneId)
             is LayerSource.Image -> o.put("type", "image").put("path", s.path).put("parallax", s.parallax)
+            is LayerSource.Shader -> o.put("type", "shader").put("code", s.code)
         }
         return o
     }
@@ -49,6 +50,7 @@ object CompositionJson {
         val source = when (o.optString("type")) {
             "scene" -> LayerSource.Scene(o.getString("sceneId"))
             "image" -> LayerSource.Image(o.getString("path"), o.optBoolean("parallax", true))
+            "shader" -> LayerSource.Shader(o.getString("code"))
             else -> return null
         }
         return Layer(
