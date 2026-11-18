@@ -16,14 +16,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -84,6 +87,8 @@ class PreviewActivity : ComponentActivity() {
                         store.deleteDraft(composition.id)
                         finish()
                     },
+                    // Keeps the draft, so the agent can still revise it.
+                    onBack = { finish() },
                 )
             }
         }
@@ -104,8 +109,19 @@ private fun PreviewScreen(
     onSet: () -> Unit,
     onEdit: () -> Unit,
     onDiscard: () -> Unit,
+    onBack: () -> Unit,
 ) {
     var saved by rememberSaveable { mutableStateOf(initiallySaved) }
+    var confirmDiscard by remember { mutableStateOf(false) }
+    if (confirmDiscard) {
+        AlertDialog(
+            onDismissRequest = { confirmDiscard = false },
+            title = { Text("Discard this wallpaper?") },
+            text = { Text("It's deleted, and the agent can't revise it any more. Use \"Back to chat\" to keep it and ask for changes.") },
+            confirmButton = { TextButton(onClick = { confirmDiscard = false; onDiscard() }) { Text("Discard") } },
+            dismissButton = { TextButton(onClick = { confirmDiscard = false }) { Text("Keep") } },
+        )
+    }
     Box(Modifier.fillMaxSize().background(Color.Black)) {
         ScenePreview(composition = composition, interactive = true, modifier = Modifier.fillMaxSize())
         Column(
@@ -136,17 +152,23 @@ private fun PreviewScreen(
                     containerColor = Color.Black.copy(alpha = 0.4f),
                     contentColor = Color.White,
                 )
+                // "Back to chat" keeps the draft, so the user can ask the agent for changes.
+                OutlinedButton(onClick = onBack, colors = overlay, modifier = Modifier.weight(1f)) { Text("Back to chat") }
                 if (!saved) {
-                    OutlinedButton(onClick = onDiscard, colors = overlay, modifier = Modifier.weight(1f)) { Text("Discard") }
                     OutlinedButton(onClick = { saved = onSave() }, colors = overlay, modifier = Modifier.weight(1f)) { Text("Save") }
                 } else {
-                    OutlinedButton(onClick = onEdit, colors = overlay, modifier = Modifier.weight(1f)) { Text("Add photo / layers") }
+                    OutlinedButton(onClick = onEdit, colors = overlay, modifier = Modifier.weight(1f)) { Text("Add layers") }
                 }
             }
             Button(onClick = {
                 onSet()
                 saved = true
             }, modifier = Modifier.fillMaxWidth()) { Text("Set as wallpaper") }
+            if (!saved) {
+                TextButton(onClick = { confirmDiscard = true }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                    Text("Discard", color = Color.White.copy(alpha = 0.8f))
+                }
+            }
         }
     }
 }

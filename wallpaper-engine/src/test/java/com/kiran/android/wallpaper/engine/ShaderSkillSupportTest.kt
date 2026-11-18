@@ -70,6 +70,21 @@ class ShaderSkillSupportTest {
     }
 
     @Test
+    fun staticCheck_requiresTouchGuard_andAcceptsTaps() {
+        // The bug from a real session: unguarded uTouch jumps to the bottom-left when the finger lifts.
+        val unguarded = "void main(){ float d = distance(gl_FragCoord.xy, uTouch); gl_FragColor = vec4(d); }"
+        assertTrue(ShaderValidator.staticCheck(unguarded).single().contains("uTaps"))
+        listOf(
+            "void main(){ vec3 c = vec3(0.0); if (uTouch.x >= 0.0) c += 1.0; gl_FragColor = vec4(c, 1.0); }",
+            "void main(){ float on = step(0.0, uTouch.x); gl_FragColor = vec4(on * distance(gl_FragCoord.xy, uTouch)); }",
+            "void main(){ if (0.0 <= uTouch.x) gl_FragColor = vec4(1.0); }",
+            // uTaps needs no guard beyond its own z check.
+            "void main(){ float h = 0.0; for (int i = 0; i < 4; i++) { if (uTaps[i].z >= 0.0) h += 1.0; } gl_FragColor = vec4(h); }",
+        ).forEach { assertEquals(it, emptyList<String>(), ShaderValidator.staticCheck(it)) }
+        assertTrue(ShaderValidator.staticCheck("uniform vec3 uTaps[4];\nvoid main(){}").single().contains("uTaps"))
+    }
+
+    @Test
     fun staticCheck_ignoresCommentedOutDirectives() {
         assertEquals(emptyList<String>(), ShaderValidator.staticCheck("// #version 300 es\n/* precision highp float; */\nvoid main(){gl_FragColor=vec4(1.0);}"))
     }

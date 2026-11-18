@@ -64,8 +64,21 @@ object ShaderValidator {
         if (Regex("\\btexture\\s*\\(").containsMatchIn(noComments)) {
             problems += "Use texture2D(), not texture(); this is GLSL ES 1.00."
         }
+        // uTouch is (-1,-1) when no finger is down. Using it unguarded draws the effect at the
+        // bottom-left corner whenever the finger lifts, a common and visible bug.
+        if (Regex("\\buTouch\\b").containsMatchIn(noComments) && !TOUCH_GUARD.any { it.containsMatchIn(noComments) }) {
+            problems += "uTouch is (-1,-1) when no finger is down. Only use it inside if (uTouch.x >= 0.0) { ... }. " +
+                "For effects that continue after a tap (ripples, bursts), use uTaps instead."
+        }
         return problems
     }
+
+    /** Ways a shader can check that uTouch is valid before using it. */
+    private val TOUCH_GUARD = listOf(
+        Regex("\\buTouch\\s*\\.\\s*[xy]\\s*(>=|>|<=|<|==|!=)"),
+        Regex("(>=|>|<=|<)\\s*uTouch\\s*\\.\\s*[xy]\\b"),
+        Regex("\\bstep\\s*\\([^;]*\\buTouch\\b"),
+    )
 
     /**
      * Turns raw compiler output into short messages with the author's line numbers. Drivers
@@ -200,7 +213,7 @@ object ShaderValidator {
 
     private fun stripComments(s: String) = s.replace(Regex("/\\*[\\s\\S]*?\\*/"), " ").replace(Regex("//[^\\n]*"), "")
 
-    private val BUILT_INS = listOf("uTime", "uResolution", "uTouch", "uOffset", "uLayered", "uBelow", "uOpacity", "vUv")
+    private val BUILT_INS = listOf("uTime", "uResolution", "uTouch", "uTaps", "uOffset", "uLayered", "uBelow", "uOpacity", "vUv")
     private val LINE_A = Regex("\\b\\d+:(\\d+):")       // ERROR: 0:12: ...
     private val LINE_B = Regex("\\b\\d+\\((\\d+)\\)")   // 0(12) : error ...
     private const val MAX_ERRORS = 6

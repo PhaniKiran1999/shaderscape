@@ -13,7 +13,7 @@ object ShaderTidier {
     private val VERSION = Regex("(?m)^\\s*#\\s*version[^\\n]*\\n?")
     private val PRECISION = Regex("(?m)^\\s*precision\\s+(lowp|mediump|highp)\\s+float\\s*;[^\\n]*\\n?")
     private val BUILT_IN_DECL = Regex(
-        "(?m)^\\s*(uniform|varying)\\s+\\w+\\s+(uTime|uResolution|uTouch|uOffset|uLayered|uOpacity|vUv)\\s*;[^\\n]*\\n?",
+        "(?m)^\\s*(uniform|varying)\\s+\\w+\\s+(uTime|uResolution|uTouch|uTaps|uOffset|uLayered|uOpacity|vUv)\\s*(\\[\\s*\\d+\\s*\\])?\\s*;[^\\n]*\\n?",
     )
 
     fun tidy(raw: String): Tidied {

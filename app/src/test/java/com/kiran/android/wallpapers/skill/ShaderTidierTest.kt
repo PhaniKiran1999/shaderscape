@@ -15,6 +15,12 @@ class ShaderTidierTest {
     }
 
     @Test
+    fun removesRedeclaredTapArray() {
+        val t = ShaderTidier.tidy("uniform vec3 uTaps[4];\nvoid main() { gl_FragColor = vec4(uTaps[0].z); }\n")
+        assertEquals("void main() { gl_FragColor = vec4(uTaps[0].z); }\n", t.code)
+    }
+
+    @Test
     fun leavesCleanCodeAlone() {
         val code = "void main() {\n    gl_FragColor = vec4(1.0);\n}\n"
         val t = ShaderTidier.tidy(code)

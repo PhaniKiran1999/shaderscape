@@ -4,6 +4,18 @@
   <component name="GradleSettings">
     <option name="linkedExternalProjectsSettings">
       <GradleProjectSettings>
+        <compositeConfiguration>
+          <compositeBuild compositeDefinitionSource="SCRIPT">
+            <builds>
+              <build path="$PROJECT_DIR$/../agent-skill-sdk" name="agent-skill-sdk">
+                <projects>
+                  <project path="$PROJECT_DIR$/../agent-skill-sdk" />
+                  <project path="$PROJECT_DIR$/../agent-skill-sdk/skill-sdk" />
+                </projects>
+              </build>
+            </builds>
+          </compositeBuild>
+        </compositeConfiguration>
         <option name="testRunner" value="CHOOSE_PER_TEST" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
         <option name="modules">
@@ -11,6 +23,8 @@
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/wallpaper-engine" />
+            <option value="$PROJECT_DIR$/../agent-skill-sdk" />
+            <option value="$PROJECT_DIR$/../agent-skill-sdk/skill-sdk" />
           </set>
         </option>
       </GradleProjectSettings>

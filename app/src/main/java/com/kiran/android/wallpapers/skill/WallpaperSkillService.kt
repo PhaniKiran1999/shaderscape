@@ -52,18 +52,35 @@ class WallpaperSkillService : SkillProviderService() {
         TOOL_CREATE -> create(call, draftId = null)
         TOOL_REVISE -> {
             val id = call.args.optString("draft_id")
-            if (store.getDraft(id) == null) ToolResult.error("No draft with id '$id'. Call $TOOL_CREATE instead.")
-            else create(call, draftId = id)
+            when {
+                store.getDraft(id) != null -> create(call, draftId = id)
+                // The user already saved it (or discarded it): leave that alone and make a new draft,
+                // instead of failing and making the model start over.
+                store[id] != null -> create(
+                    call, draftId = null, fallbackTitle = store[id]?.title,
+                    note = "The user saved the previous version, so this is a new draft. The saved one is unchanged.",
+                )
+                else -> create(
+                    call, draftId = null,
+                    note = "The previous draft was discarded or expired, so this is a new draft.",
+                )
+            }
         }
         TOOL_LIST -> listSaved()
         else -> ToolResult.error("Unknown tool ${call.tool}")
     }
 
-    private suspend fun create(call: ToolCall, draftId: String?): ToolResult {
+    private suspend fun create(
+        call: ToolCall,
+        draftId: String?,
+        fallbackTitle: String? = null,
+        note: String? = null,
+    ): ToolResult {
         val caller = call.callerPackage ?: "unknown"
         val raw = call.args.optString("glsl")
         val previous = draftId?.let { store.getDraft(it) }
-        val title = call.args.optString("title").trim().ifEmpty { previous?.title ?: "Agent wallpaper" }.take(40)
+        val title = call.args.optString("title").trim()
+            .ifEmpty { previous?.title ?: fallbackTitle ?: "Agent wallpaper" }.take(40)
 
         val tidy = ShaderTidier.tidy(raw)
         call.progress("Checking the shader on the GPU")
@@ -109,6 +126,7 @@ class WallpaperSkillService : SkillProviderService() {
                             "then save or apply it. It is not saved yet. Use $TOOL_REVISE with draft_id for changes.",
                     )
                 if (tidy.notes.isNotEmpty()) data.put("auto_fixed", JSONArray(tidy.notes))
+                note?.let { data.put("note", it) }
                 ToolResult.ok(data, listOf(previewArtifact(id, title)))
             }
         }
@@ -160,18 +178,32 @@ class WallpaperSkillService : SkillProviderService() {
             Rules:
             - Write only helper functions and void main(). Set gl_FragColor = vec4(r, g, b, 1.0).
             - Already declared, do not redeclare: uniform float uTime (seconds); uniform vec2 uResolution (pixels);
-              uniform vec2 uTouch (finger position in pixels, (-1,-1) when not touching); varying vec2 vUv (0..1).
-            - No #version, no precision line, no textures. Loops need constant bounds: for (int i = 0; i < 8; i++).
-            - Make it interactive: when uTouch.x >= 0.0, react near the finger.
-            Example:
+              varying vec2 vUv (0..1);
+              uniform vec2 uTouch: finger position in pixels while touching, (-1,-1) otherwise. Use only inside if (uTouch.x >= 0.0);
+              uniform vec3 uTaps[4]: the 4 most recent taps, newest first. xy = position in pixels, z = seconds since
+              that tap, z < 0.0 = unused. Use it for effects that continue after a tap: ripples, bursts, fading trails.
+            - No #version, no precision line, no textures. Loops need constant bounds: for (int i = 0; i < 4; i++).
+            Example (water with ripples that spread from each tap and fade out):
             void main() {
-              vec2 p = vUv;
-              vec3 c = 0.5 + 0.5 * cos(uTime + p.xyx * 3.0 + vec3(0.0, 2.0, 4.0));
-              if (uTouch.x >= 0.0) c += 0.4 * exp(-distance(gl_FragCoord.xy, uTouch) / 60.0);
-              gl_FragColor = vec4(c, 1.0);
+              vec2 p = gl_FragCoord.xy;
+              float h = 0.0;
+              for (int i = 0; i < 4; i++) {
+                vec3 t = uTaps[i];
+                if (t.z >= 0.0) {
+                  float d = distance(p, t.xy) - t.z * 300.0;
+                  h += sin(d * 0.08) * exp(-abs(d) * 0.02) * exp(-t.z * 0.8);
+                }
+              }
+              vec2 uv = vUv + 0.02 * vec2(sin(vUv.y * 9.0 + uTime), cos(vUv.x * 7.0 + uTime));
+              vec3 water = mix(vec3(0.0, 0.18, 0.35), vec3(0.1, 0.55, 0.75), uv.y) + 0.06 * sin(uv.x * 40.0 + uTime * 2.0);
+              gl_FragColor = vec4(water + h * 0.25, 1.0);
             }
             If the tool returns errors, fix them and call it again with the whole corrected shader.
-            When it returns ok, say a preview is ready to try. Never say it was saved or applied.
+            When revising, rewrite the shader so every change the user asked for is really implemented,
+            not just tweaked numbers. Always pass the draft_id you were given.
+            Don't paste the shader code into your reply unless the user asks for it; the preview shows the result.
+            When it returns ok, say in one or two sentences what you made or changed and that a preview is ready to try.
+            Never say it was saved or applied.
         """.trimIndent()
 
         val DESCRIPTOR = SkillDescriptor(

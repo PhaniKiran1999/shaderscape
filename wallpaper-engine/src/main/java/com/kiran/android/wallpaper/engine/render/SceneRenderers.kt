@@ -82,6 +82,7 @@ internal class ShaderSceneRenderer(override val scene: ShaderScene) : LayerRende
             set("uTouch", -1f, -1f)
         }
         set("uOffset", scene.xOffset)
+        bindTaps(timeSec)
         set("uLayered", if (ctx.layered) 1f else 0f)
         set("uOpacity", ctx.opacity)
         if (ctx.belowTexture != 0) {
@@ -95,6 +96,36 @@ internal class ShaderSceneRenderer(override val scene: ShaderScene) : LayerRende
     }
 
     override fun release() = program.release()
+
+    // Recent taps: x, y (GL pixels) and the time they happened, newest last. start < 0 = empty.
+    private val tapX = FloatArray(ShaderScene.MAX_TAPS)
+    private val tapY = FloatArray(ShaderScene.MAX_TAPS)
+    private val tapStart = FloatArray(ShaderScene.MAX_TAPS) { -1f }
+    private val tapUniform = FloatArray(ShaderScene.MAX_TAPS * 3)
+
+    /** Stamps new taps with the current time and uploads `uTaps` (newest first, z = age in seconds). */
+    private fun bindTaps(timeSec: Float) {
+        while (scene.pendingTaps.isNotEmpty()) {
+            val (nx, ny) = scene.pendingTaps.removeFirst()
+            for (i in 0 until ShaderScene.MAX_TAPS - 1) {
+                tapX[i] = tapX[i + 1]; tapY[i] = tapY[i + 1]; tapStart[i] = tapStart[i + 1]
+            }
+            val last = ShaderScene.MAX_TAPS - 1
+            tapX[last] = nx * width
+            tapY[last] = (1f - ny) * height
+            tapStart[last] = timeSec
+        }
+        for (k in 0 until ShaderScene.MAX_TAPS) {
+            val i = ShaderScene.MAX_TAPS - 1 - k // newest first
+            val age = timeSec - tapStart[i]
+            val live = tapStart[i] >= 0f && age >= 0f && age <= ShaderScene.TAP_LIFETIME_SEC
+            tapUniform[k * 3] = if (live) tapX[i] else -1f
+            tapUniform[k * 3 + 1] = if (live) tapY[i] else -1f
+            tapUniform[k * 3 + 2] = if (live) age else -1f
+        }
+        val loc = program.uniform("uTaps")
+        if (loc >= 0) GLES20.glUniform3fv(loc, ShaderScene.MAX_TAPS, tapUniform, 0)
+    }
 
     override fun set(name: String, value: Float) = GLES20.glUniform1f(program.uniform(name), value)
     override fun set(name: String, x: Float, y: Float) = GLES20.glUniform2f(program.uniform(name), x, y)

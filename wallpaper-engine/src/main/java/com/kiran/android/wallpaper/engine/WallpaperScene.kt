@@ -37,7 +37,15 @@ sealed class WallpaperScene {
         onSurfaceChanged(width, height)
     }
 
+    /** Finger-down positions (normalised, top-left origin) not yet stamped with a time by the renderer. */
+    internal val pendingTaps = ArrayDeque<Pair<Float, Float>>()
+
     internal fun dispatchTouch(x: Float, y: Float) {
+        // A new finger-down is a tap: effects such as ripples keep running from it after the finger lifts.
+        if (x >= 0f && touchX < 0f) {
+            pendingTaps.addLast(x to y)
+            while (pendingTaps.size > ShaderScene.MAX_TAPS) pendingTaps.removeFirst()
+        }
         touchX = x
         touchY = y
         onTouch(x, y)
@@ -91,6 +99,10 @@ abstract class ShaderScene : WallpaperScene() {
     open fun onBindUniforms(uniforms: UniformScope, timeSec: Float) {}
 
     companion object {
+        /** How many recent taps `uTaps` holds, and how long (seconds) each stays in it. */
+        const val MAX_TAPS = 4
+        const val TAP_LIFETIME_SEC = 8f
+
         const val SHADER_HEADER = """#ifdef GL_FRAGMENT_PRECISION_HIGH
 precision highp float;
 #else
@@ -100,6 +112,7 @@ varying vec2 vUv;          // 0..1, bottom-left origin
 uniform float uTime;       // seconds since start (wraps every hour)
 uniform vec2 uResolution;  // surface size in pixels
 uniform vec2 uTouch;       // touch in pixels, bottom-left origin; (-1,-1) when not touching
+uniform vec3 uTaps[4];     // recent taps, newest first: xy = pixels (bottom-left origin), z = seconds since the tap; z < 0 = unused
 uniform float uOffset;     // launcher scroll offset 0..1
 uniform float uLayered;    // 1.0 when drawn over other layers: skip your own background, use alpha
 uniform sampler2D uBelow;  // layers below (only when readsBelow = true)
