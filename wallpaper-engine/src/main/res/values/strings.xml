@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Host apps can override these to customise what the system live-wallpaper picker shows. -->
+    <string name="wallpaper_engine_label">Procedural Wallpapers</string>
+    <string name="wallpaper_engine_description">Animated wallpapers rendered with OpenGL shaders and pixel graphics.</string>
+</resources>
