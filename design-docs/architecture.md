@@ -36,7 +36,7 @@ flowchart TB
         subgraph Core["Rendering core"]
             RT["RenderThread<br/>(Choreographer loop, FPS cap,<br/>pause when invisible)"]
             EGL["EglCore<br/>(EGL14, OpenGL ES 2.0)"]
-            SR["ShaderSceneRenderer<br/>(uTime, uResolution, uTouch, uOffset)"]
+            SR["ShaderSceneRenderer<br/>(uTime, uResolution, uTouch, uTaps, uOffset)"]
             PR["PixelSceneRenderer<br/>(IntArray → glTexSubImage2D,<br/>GL_NEAREST upscale)"]
             GLU["ShaderProgram + FullscreenQuad"]
         end
@@ -79,7 +79,7 @@ flowchart TB
 ```mermaid
 flowchart LR
     subgraph GPUPath["ShaderScene: GPU path"]
-        U["CPU: set uniforms<br/>(time, resolution, touch)"] --> FS["GPU: fragment shader<br/>runs per pixel, full res"] --> S1["Surface"]
+        U["CPU: set uniforms<br/>(time, resolution, touch, taps)"] --> FS["GPU: fragment shader<br/>runs per pixel, full res"] --> S1["Surface"]
     end
     subgraph CPUPath["PixelScene: CPU path"]
         R["CPU: scene.render(pixels, t)<br/>low-res: targetWidth wide,<br/>height from screen aspect"] --> T["glTexSubImage2D<br/>(upload texture)"] --> B["GPU: blit shader<br/>nearest-neighbor upscale"] --> S2["Surface"]
@@ -91,6 +91,7 @@ flowchart LR
 - **One service, many scenes:** a single `ProceduralWallpaperService` hosts every scene and composition. It shows whatever `WallpaperTarget` `WallpaperSelection` holds, and a change (or an edit to the active composition) swaps it live.
 - **One `RenderThread` per surface:** home, lock and system preview engines and each in-app preview get their own thread and GL context.
 - **Battery:** render only while visible, cap the FPS (30 by default, ~15 for gallery thumbnails), draw photo-only stacks once instead of continuously, and release GL resources on surface destroy.
+- **Touch input:** `uTouch` is the live finger position. `uTaps[4]` keeps the last four taps (newest first, with seconds since each tap, for 8 s), so shaders can draw effects like ripples that outlive the touch without keeping their own state.
 - **Extensibility:** adding a wallpaper means subclassing `ShaderScene` or `PixelScene` and registering it. No engine changes are needed.
 
 ## Layered compositions
@@ -144,10 +145,12 @@ Scenes get `uLayered = 1` when they aren't the bottom layer. Aurora and Lens Fla
 
 ## Agent skill provider
 
-The app is also a **skill provider** for on-device agents, through the [Agent Skill SDK](../../agent-skill-sdk/README.md):
+The app is also a **skill provider** for on-device agents, through the [Agent Skill SDK](https://github.com/PhaniKiran1999/agent-skill-sdk) (from JitPack: `com.github.PhaniKiran1999:agent-skill-sdk`):
 - **`skill/WallpaperSkillService`** exposes three tools: `create_shader_wallpaper`, `revise_shader_wallpaper` and `list_my_wallpapers`. It's guarded by the SDK's signature permission.
 - **`ShaderTidier`** fixes formatting mistakes before checking. **`engine/validation/ShaderValidator`** then checks agent-written GLSL on an offscreen GPU context, using the same header, footer and renderer as the live wallpaper. It returns fixable errors with the author's line numbers.
 - **Valid shaders become drafts** (`CompositionStore` `drafts.json`): a single `LayerSource.Shader` layer, i.e. inline GLSL with no registry entry.
-- **The agent receives a preview artifact**, a PendingIntent to `skill/PreviewActivity`. There the user tries the wallpaper and chooses Save, Set as wallpaper, Edit layers (composer) or Discard. The agent can never save or apply anything itself.
+- **Revisions update the same draft.** `revise_shader_wallpaper` replaces the draft's shader, so the open preview card shows the change. If the user already saved or discarded that draft, the tool starts a new draft and tells the agent, instead of failing.
+- **The agent receives a preview artifact**, a PendingIntent to `skill/PreviewActivity`. There the user tries the wallpaper and chooses Save, Set as wallpaper, Edit layers (composer) or Discard. The agent can never save or apply anything itself. "Back to chat" keeps the draft.
+- **Artifact state:** artifact ids are `preview:<draftId>`. `onResolveArtifact` reports *pending* (still a draft), *saved* (promoted into My wallpapers) or *gone* (discarded or expired), so the host can show the right card when an old chat is reopened.
 
-Full design: `agent-skill-sdk/design-docs/`.
+Full design: [agent-skill-sdk design docs](https://github.com/PhaniKiran1999/agent-skill-sdk/tree/main/design-docs).

@@ -20,6 +20,7 @@ The engine prepends a header, so the shader only needs `void main()`. Don't rede
 | `uTime` | `float` | seconds (wraps hourly) |
 | `uResolution` | `vec2` | surface size in px |
 | `uTouch` | `vec2` | touch in px (bottom-left), `-1` when not touching |
+| `uTaps[4]` | `vec3` | recent taps, newest first: `xy` = px (bottom-left), `z` = seconds since the tap, `z < 0` = unused (taps fade after 8 s) |
 | `uOffset` | `float` | launcher scroll 0..1 |
 | `uLayered` | `float` | 1.0 when drawn over other layers |
 | `uBelow` | `sampler2D` | layers below (only if `readsBelow`) |

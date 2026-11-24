@@ -139,7 +139,7 @@ sequenceDiagram
     loop Choreographer frame, capped at scene.targetFps
         alt ShaderScene
             RT->>R: drawFrame(t)
-            R->>R: set uTime, uResolution, uTouch, uOffset
+            R->>R: set uTime, uResolution, uTouch, uTaps, uOffset
             R->>R: draw fullscreen quad (GPU runs fragment shader)
         else PixelScene
             RT->>R: drawFrame(t)
@@ -152,6 +152,7 @@ sequenceDiagram
 
     Sys->>Eng: onTouchEvent / onOffsetsChanged
     Eng->>RT: post(input) → scene.onTouch / onOffsetsChanged
+    Note over RT: Finger-down also records a tap for uTaps (last 4, 8 s lifetime).
 
     Sys->>Eng: onVisibilityChanged(false) (screen off / app opened)
     Eng->>RT: pause() (stop Choreographer callbacks, 0 frames)
