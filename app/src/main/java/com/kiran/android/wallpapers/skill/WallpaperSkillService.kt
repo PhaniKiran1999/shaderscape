@@ -3,6 +3,7 @@ package com.kiran.android.wallpapers.skill
 import android.app.PendingIntent
 import android.content.Intent
 import com.kiran.agentskills.sdk.Artifact
+import com.kiran.agentskills.sdk.ArtifactState
 import com.kiran.agentskills.sdk.ParamsSchema
 import com.kiran.agentskills.sdk.SkillDescriptor
 import com.kiran.agentskills.sdk.SkillProviderService
@@ -132,6 +133,21 @@ class WallpaperSkillService : SkillProviderService() {
         }
     }
 
+    /**
+     * Lets the agent app show previews from old chats: a draft is still pending, a saved one
+     * opens from "My wallpapers", and a discarded or expired one is gone.
+     */
+    override suspend fun onResolveArtifact(artifactId: String): ArtifactState? {
+        val id = artifactId.removePrefix(ARTIFACT_PREFIX).takeIf { artifactId.startsWith(ARTIFACT_PREFIX) } ?: return null
+        store.getDraft(id)?.let {
+            return ArtifactState(ArtifactState.Status.PENDING, "Live wallpaper · not saved yet", previewArtifact(id, it.title))
+        }
+        store[id]?.let {
+            return ArtifactState(ArtifactState.Status.SAVED, "Saved in My wallpapers", previewArtifact(id, it.title))
+        }
+        return ArtifactState(ArtifactState.Status.GONE, "Discarded or expired")
+    }
+
     private fun listSaved(): ToolResult {
         val saved = store.all()
         return ToolResult.ok(
@@ -151,7 +167,7 @@ class WallpaperSkillService : SkillProviderService() {
             this, draftId.hashCode(), intent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
-        return Artifact(id = "preview:$draftId", kind = "wallpaper_preview", title = title, subtitle = "Tap to preview", action = pi)
+        return Artifact(id = "$ARTIFACT_PREFIX$draftId", kind = "wallpaper_preview", title = title, subtitle = "Tap to preview", action = pi)
     }
 
     private fun recordFailure(caller: String): Int {
@@ -166,6 +182,7 @@ class WallpaperSkillService : SkillProviderService() {
         const val TOOL_CREATE = "create_shader_wallpaper"
         const val TOOL_REVISE = "revise_shader_wallpaper"
         const val TOOL_LIST = "list_my_wallpapers"
+        private const val ARTIFACT_PREFIX = "preview:"
         const val MAX_FAILED_ATTEMPTS = 3
         private val FAILURE_WINDOW_MS = TimeUnit.MINUTES.toMillis(10)
 
