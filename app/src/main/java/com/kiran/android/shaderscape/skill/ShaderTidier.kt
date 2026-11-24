@@ -1,4 +1,4 @@
-package com.kiran.android.wallpapers.skill
+package com.kiran.android.shaderscape.skill
 
 /**
  * Fixes harmless, common LLM formatting mistakes before validation, so small models don't burn

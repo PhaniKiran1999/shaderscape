@@ -1,4 +1,4 @@
-package com.kiran.android.wallpapers
+package com.kiran.android.shaderscape
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -10,10 +10,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import com.kiran.android.wallpapers.ui.ComposerScreen
-import com.kiran.android.wallpapers.ui.DetailScreen
-import com.kiran.android.wallpapers.ui.GalleryScreen
-import com.kiran.android.wallpapers.ui.theme.WallpapersTheme
+import com.kiran.android.shaderscape.ui.ComposerScreen
+import com.kiran.android.shaderscape.ui.DetailScreen
+import com.kiran.android.shaderscape.ui.GalleryScreen
+import com.kiran.android.shaderscape.ui.theme.WallpapersTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

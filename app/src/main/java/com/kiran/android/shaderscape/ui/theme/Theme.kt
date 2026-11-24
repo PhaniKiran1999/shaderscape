@@ -1,4 +1,4 @@
-package com.kiran.android.wallpapers.ui.theme
+package com.kiran.android.shaderscape.ui.theme
 
 import android.app.Activity
 import android.os.Build

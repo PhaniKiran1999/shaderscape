@@ -1,4 +1,4 @@
-package com.kiran.android.wallpapers.ui
+package com.kiran.android.shaderscape.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -51,7 +51,7 @@ fun GalleryScreen(
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Wallpapers") }) },
+        topBar = { TopAppBar(title = { Text("Shaderscape") }) },
     ) { padding ->
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = 150.dp),

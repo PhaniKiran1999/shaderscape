@@ -26,7 +26,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Wallpapers"
+rootProject.name = "Shaderscape"
 
 include(":app")
 include(":wallpaper-engine")

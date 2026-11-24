@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Wallpapers</string>
+    <string name="app_name">Shaderscape</string>
     <!-- Overrides the engine library's label in the system live-wallpaper picker. -->
-    <string name="wallpaper_engine_label">Wallpapers</string>
+    <string name="wallpaper_engine_label">Shaderscape</string>
 </resources>

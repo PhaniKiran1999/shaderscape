@@ -1,4 +1,4 @@
-# Architecture: Procedural Live Wallpapers
+# Shaderscape architecture: procedural live wallpapers
 
 Two Gradle modules:
 
@@ -12,7 +12,7 @@ Two Gradle modules:
 ```mermaid
 flowchart TB
     subgraph APP[":app (application)"]
-        AppInit["WallpapersApp<br/>(Application.onCreate)"]
+        AppInit["ShaderscapeApp<br/>(Application.onCreate)"]
         subgraph Scenes["Concrete scenes"]
             SS["Shader scenes<br/>plasma, aurora (AssetShaderScene),<br/>StarfieldTunnelScene, LensFlareScene<br/>(custom uniforms)<br/>(GLSL in assets/shaders/*.frag)"]
             PS["Pixel scenes<br/>GameOfLifeScene, PixelFireScene, RetroPlasmaScene<br/>(Kotlin writes IntArray)"]

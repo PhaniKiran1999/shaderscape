@@ -1,4 +1,4 @@
-package com.kiran.android.wallpapers.ui
+package com.kiran.android.shaderscape.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember

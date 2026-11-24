@@ -1,4 +1,4 @@
-package com.kiran.android.wallpapers.skill
+package com.kiran.android.shaderscape.skill
 
 import android.content.Intent
 import android.os.Bundle
@@ -37,9 +37,9 @@ import com.kiran.android.wallpaper.engine.WallpaperSetter
 import com.kiran.android.wallpaper.engine.WallpaperTarget
 import com.kiran.android.wallpaper.engine.composition.Composition
 import com.kiran.android.wallpaper.engine.composition.CompositionStore
-import com.kiran.android.wallpapers.MainActivity
-import com.kiran.android.wallpapers.ui.ScenePreview
-import com.kiran.android.wallpapers.ui.theme.WallpapersTheme
+import com.kiran.android.shaderscape.MainActivity
+import com.kiran.android.shaderscape.ui.ScenePreview
+import com.kiran.android.shaderscape.ui.theme.WallpapersTheme
 
 /**
  * Where the user decides about an agent-made draft: try it live (touch works), then Save, Set

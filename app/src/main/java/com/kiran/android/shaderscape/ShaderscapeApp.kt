@@ -1,21 +1,21 @@
-package com.kiran.android.wallpapers
+package com.kiran.android.shaderscape
 
 import android.app.Application
 import com.kiran.android.wallpaper.engine.AssetShaderScene
 import com.kiran.android.wallpaper.engine.WallpaperRegistry
 import com.kiran.android.wallpaper.engine.WallpaperSelection
-import com.kiran.android.wallpapers.scenes.GameOfLifeScene
-import com.kiran.android.wallpapers.scenes.LensFlareScene
-import com.kiran.android.wallpapers.scenes.PixelFireScene
-import com.kiran.android.wallpapers.scenes.RetroPlasmaScene
-import com.kiran.android.wallpapers.scenes.RippleScene
-import com.kiran.android.wallpapers.scenes.StarfieldTunnelScene
+import com.kiran.android.shaderscape.scenes.GameOfLifeScene
+import com.kiran.android.shaderscape.scenes.LensFlareScene
+import com.kiran.android.shaderscape.scenes.PixelFireScene
+import com.kiran.android.shaderscape.scenes.RetroPlasmaScene
+import com.kiran.android.shaderscape.scenes.RippleScene
+import com.kiran.android.shaderscape.scenes.StarfieldTunnelScene
 
 /**
  * Registers every wallpaper. This runs before both the activity and the wallpaper service,
  * so the registry is always populated.
  */
-class WallpapersApp : Application() {
+class ShaderscapeApp : Application() {
 
     override fun onCreate() {
         super.onCreate()

@@ -1,4 +1,4 @@
-package com.kiran.android.wallpapers.ui
+package com.kiran.android.shaderscape.ui
 
 import android.widget.Toast
 import androidx.compose.foundation.background

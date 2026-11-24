@@ -1,4 +1,4 @@
-package com.kiran.android.wallpapers
+package com.kiran.android.shaderscape
 
 import org.junit.Test
 

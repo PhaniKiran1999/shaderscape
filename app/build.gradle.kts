@@ -4,13 +4,13 @@ plugins {
 }
 
 android {
-    namespace = "com.kiran.android.wallpapers"
+    namespace = "com.kiran.android.shaderscape"
     compileSdk {
         version = release(37)
     }
 
     defaultConfig {
-        applicationId = "com.kiran.android.wallpapers"
+        applicationId = "com.kiran.android.shaderscape"
         minSdk = 24
         targetSdk = 37
         versionCode = 1

@@ -1,4 +1,4 @@
-package com.kiran.android.wallpapers.scenes
+package com.kiran.android.shaderscape.scenes
 
 import android.content.Context
 import com.kiran.android.wallpaper.engine.AssetShaderScene

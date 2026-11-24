@@ -1,4 +1,4 @@
-package com.kiran.android.wallpapers.skill
+package com.kiran.android.shaderscape.skill
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

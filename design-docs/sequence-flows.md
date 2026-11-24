@@ -18,7 +18,7 @@ The end-to-end flow from process start to an animating home screen, in five stag
 sequenceDiagram
     autonumber
     participant OS as Android OS
-    participant App as WallpapersApp
+    participant App as ShaderscapeApp
     participant Reg as WallpaperRegistry
     participant Sel as WallpaperSelection
     participant Act as MainActivity
