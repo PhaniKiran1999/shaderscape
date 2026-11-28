@@ -15,3 +15,8 @@
 local.properties
 /.idea/deploymentTargetSelector.xml
 /.idea/deviceManager.xml
+
+# Release signing key and its passwords (see app/build.gradle.kts). Never commit.
+keystore.properties
+*.jks
+*.keystore

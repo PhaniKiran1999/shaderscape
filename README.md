@@ -36,6 +36,26 @@ Requirements: Android Studio with JDK 21+, Android SDK 37. The app targets SDK 3
 Open the app, pick a wallpaper (or compose one), and tap **Set as wallpaper**. The first time, Android shows its
 live-wallpaper picker, and the entry is called *Shaderscape*.
 
+### Release APKs
+Every push to `master` runs [`.github/workflows/release-apk.yml`](.github/workflows/release-apk.yml): unit tests, then a
+release APK signed with the release key, published as a GitHub Release (`build-<run number>`, version `1.0.<run number>`).
+
+It must be the **same key as PAgent's**: PAgent binds to the wallpaper skill through a signature-level permission.
+The repository's `Shaderscape` environment (Settings → Environments) holds four secrets with the same names and values as
+PAgent's: `PAGENT_KEYSTORE_BASE64` (the `.jks` file, base64-encoded), `PAGENT_KEYSTORE_PASSWORD`, `PAGENT_KEY_ALIAS` and
+`PAGENT_KEY_PASSWORD`.
+
+To sign release builds locally, create `keystore.properties` in the repo root (git-ignored). It's the same file as
+PAgent's:
+```properties
+PAGENT_KEYSTORE_FILE=C:/path/to/pagent-release.jks
+PAGENT_KEYSTORE_PASSWORD=...
+PAGENT_KEY_ALIAS=pagent
+PAGENT_KEY_PASSWORD=...
+```
+Without it, `assembleRelease` produces an unsigned APK. Don't mix a debug build of one app with a release build of the
+other: both declare the skill permission, so Android refuses to install the second one with a different key.
+
 ## Writing a wallpaper
 
 **Shader:** add `assets/shaders/mine.frag` containing just `void main()`. The engine supplies `vUv`, `uTime`,
